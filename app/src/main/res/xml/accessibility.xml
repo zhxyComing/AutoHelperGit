@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeNotificationStateChanged|typeWindowStateChanged|typeWindowContentChanged"
+    android:accessibilityFlags="flagDefault"
+    android:canRetrieveWindowContent="true" />
+
+    <!--android:accessibilityEventTypes="typeNotificationStateChanged|typeWindowStateChanged|typeWindowContentChanged"-->
+    <!--android:accessibilityFeedbackType="feedbackGeneric"-->
+    <!--android:accessibilityFlags="flagDefault"-->
+    <!--android:canRetrieveWindowContent="true" 这个必须通过xml设置 而且是获取视图的必要属性-->
+    <!--android:notificationTimeout="100"-->
+    <!--android:packageNames="com.tencent.mm" 在xml设置了不起作用-->
