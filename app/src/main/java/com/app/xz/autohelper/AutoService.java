@@ -3,19 +3,22 @@ package com.app.xz.autohelper;
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.annotation.TargetApi;
+import android.app.Instrumentation;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.os.Build;
-import android.provider.Settings;
-import android.text.TextUtils;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.util.List;
 
 public class AutoService extends AccessibilityService {
+
+    public static boolean strongMode = false;
 
     private static final String TAG = "testkkk";
 
@@ -24,30 +27,33 @@ public class AutoService extends AccessibilityService {
         int eventType = event.getEventType();
         switch (eventType) {
             case AccessibilityEvent.TYPE_VIEW_CLICKED:
-                Log.e(TAG, "click");
-                Log.e(TAG, event.getSource().getClassName() + "");
                 //界面点击
                 break;
             case AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED:
-                Log.e(TAG, "text changed");
                 //界面文字改动
                 break;
             case AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED:
-                Log.e(TAG, "notification changed");
                 handleNotification(event);
                 break;
             case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
             case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
-                Log.e(TAG, "window state/content changed");
                 String className = event.getClassName().toString();
-                if (className.equals("com.tencent.mm.ui.LauncherUI")) {
+                if (className.equals("com.tencent.mm.ui.LauncherUI")) {//聊天和聊天列表等4个tab都是这个界面
+                    //模拟点击红包
                     getPacket();
                 } else if (className.equals("com.tencent.mm.plugin.luckymoney.ui.LuckyMoneyReceiveUI")) {
+                    //抢红包
                     openPacket();
                 } else if (className.equals("com.tencent.mm.plugin.luckymoney.ui.LuckyMoneyDetailUI")) {
+                    //关闭红包
                     close();
                 }
 
+                break;
+            case AccessibilityEvent.TYPE_VIEW_SCROLLED:
+                if (strongMode) {
+                    getPacket();
+                }
                 break;
         }
     }
@@ -59,14 +65,13 @@ public class AutoService extends AccessibilityService {
 
     @Override
     protected void onServiceConnected() {
+        Log.e(TAG, "serviceConnected");
         super.onServiceConnected();
-        Log.e(TAG, "onServiceConnected");
         initServiceInfo();
     }
 
     @Override
     protected boolean onKeyEvent(KeyEvent event) {
-        Log.e(TAG, "onKeyEvent");
         return super.onKeyEvent(event);
     }
 
@@ -81,34 +86,9 @@ public class AutoService extends AccessibilityService {
         setServiceInfo(serviceInfo);
     }
 
-    //检测服务是否开启
-    private boolean checkStealFeature(String service) {
-        int ok = 0;
-        try {
-            ok = Settings.Secure.getInt(getApplicationContext().getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED);
-        } catch (Settings.SettingNotFoundException e) {
-        }
-
-        TextUtils.SimpleStringSplitter ms = new TextUtils.SimpleStringSplitter(':');
-        if (ok == 1) {
-            String settingValue = Settings.Secure.getString(getApplicationContext().getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-            if (settingValue != null) {
-                ms.setString(settingValue);
-                while (ms.hasNext()) {
-                    String accessibilityService = ms.next();
-                    if (accessibilityService.equalsIgnoreCase(service)) {
-                        return true;
-                    }
-
-                }
-            }
-        }
-        return false;
-    }
-
     /**
      * 处理通知栏信息
-     *
+     * <p>
      * 如果是微信红包的提示信息,则模拟点击
      *
      * @param event
@@ -142,7 +122,7 @@ public class AutoService extends AccessibilityService {
         AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
         if (nodeInfo != null) {
             //为了演示,直接查看了关闭按钮的id
-            List<AccessibilityNodeInfo> infos = nodeInfo.findAccessibilityNodeInfosByViewId("@id/ez");
+            List<AccessibilityNodeInfo> infos = nodeInfo.findAccessibilityNodeInfosByViewId("com.tencent.mm:id/ho");
             nodeInfo.recycle();
             for (AccessibilityNodeInfo item : infos) {
                 item.performAction(AccessibilityNodeInfo.ACTION_CLICK);
@@ -157,8 +137,9 @@ public class AutoService extends AccessibilityService {
     private void openPacket() {
         AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
         if (nodeInfo != null) {
+            logId(nodeInfo);
             //为了演示,直接查看了红包控件的id
-            List<AccessibilityNodeInfo> list = nodeInfo.findAccessibilityNodeInfosByViewId("@id/b9m");
+            List<AccessibilityNodeInfo> list = nodeInfo.findAccessibilityNodeInfosByViewId("com.tencent.mm:id/c2i");
             nodeInfo.recycle();
             for (AccessibilityNodeInfo item : list) {
                 item.performAction(AccessibilityNodeInfo.ACTION_CLICK);
@@ -171,43 +152,135 @@ public class AutoService extends AccessibilityService {
      */
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private void getPacket() {
+        //循环查找关键字
         AccessibilityNodeInfo rootNode = getRootInActiveWindow();
         AccessibilityNodeInfo node = recycle(rootNode);
 
-        node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-        AccessibilityNodeInfo parent = node.getParent();
-        while (parent != null) {
-            if (parent.isClickable()) {
-                parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                break;
+        //节点找到 所以node!=null
+        if (node != null) {
+            //找到关键字后 一级一级往上找 直到可执行点击事件
+            if (node.isCheckable()) {
+                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
             }
-            parent = parent.getParent();
+            AccessibilityNodeInfo parent = node.getParent();
+            while (parent != null) {
+                if (parent.isClickable()) {
+                    parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                    break;
+                }
+                parent = parent.getParent();
+            }
         }
 
     }
 
     /**
      * 递归查找当前聊天窗口中的红包信息
-     *
+     * <p>
      * 聊天窗口中的红包都存在"领取红包"一词,因此可根据该词查找红包
      *
      * @param node
      */
     public AccessibilityNodeInfo recycle(AccessibilityNodeInfo node) {
+
+        if (node == null){
+            return null;
+        }
+
+        AccessibilityNodeInfo temp = null;
+
         if (node.getChildCount() == 0) {
             if (node.getText() != null) {
                 if ("领取红包".equals(node.getText().toString())) {
                     return node;
                 }
+                //这里还获取不到列表里的字 所以不成功 以后改
+//                else if (strongMode) {
+//                    if (node.getText().toString() != null && node.getText().toString().contains("[微信红包]")) {
+//                        return node;
+//                    }
+//                }
             }
         } else {
             for (int i = 0; i < node.getChildCount(); i++) {
                 if (node.getChild(i) != null) {
-                    recycle(node.getChild(i));
+                    AccessibilityNodeInfo node_temp = recycle(node.getChild(i));
+                    if (node_temp != null) {//返回null 说明不满足条件 不接收
+                        temp = node_temp;
+                    }
                 }
             }
         }
-        return node;
+        return temp;
     }
 
+    /**
+     * 测试代码
+     *
+     * @param info
+     */
+    private void logId(AccessibilityNodeInfo info) {
+        if (info.getChildCount() == 0) {
+            Log.e(TAG, info.getClassName() + "");
+        } else {
+            for (int i = 0; i < info.getChildCount(); i++) {
+                logId(info.getChild(i));
+            }
+        }
+    }
+
+    /**
+     * 模拟点击
+     * 这个方法可以指定点击点的坐标
+     * 要求：线程中执行
+     * 问题：该方法需要跨进程，然而权限限制了别的app不能这样跨进程点击
+     * 解决：1.使用NDK的方式绕过权限检测 （复杂）
+     * 2.签名时使用系统签名，以获取权限
+     * 3.root
+     * 都是和权限有关 暂时不好解决
+     * 为什么要使用这个方法：
+     * 小米手机在微信弹出LuckyMoneyReceiveUI界面时，应该是擅自添加了一个图层，导致界面识别有误；又或者是屏蔽了这个界面的UI获取；
+     */
+    private void simulateClick() {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int width = MyApplication.screenWidth;
+                int height = MyApplication.screenHeight;
+
+                Instrumentation inst = new Instrumentation();
+                inst.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                        MotionEvent.ACTION_DOWN, width * 0.5f, height * 0.5f, 0));
+                inst.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                        MotionEvent.ACTION_UP, width * 0.5f, height * 0.5f, 0));
+
+                inst.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                        MotionEvent.ACTION_DOWN, width * 0.5f, height * 0.55f, 0));
+                inst.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                        MotionEvent.ACTION_UP, width * 0.5f, height * 0.55f, 0));
+
+                inst.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                        MotionEvent.ACTION_DOWN, width * 0.5f, height * 0.6f, 0));
+                inst.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                        MotionEvent.ACTION_UP, width * 0.5f, height * 0.6f, 0));
+
+                inst.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                        MotionEvent.ACTION_DOWN, width * 0.5f, height * 0.65f, 0));
+                inst.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                        MotionEvent.ACTION_UP, width * 0.5f, height * 0.65f, 0));
+
+                inst.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                        MotionEvent.ACTION_DOWN, width * 0.5f, height * 0.7f, 0));
+                inst.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                        MotionEvent.ACTION_UP, width * 0.5f, height * 0.7f, 0));
+
+                inst.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                        MotionEvent.ACTION_DOWN, width * 0.5f, height * 0.75f, 0));
+                inst.sendPointerSync(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                        MotionEvent.ACTION_UP, width * 0.5f, height * 0.75f, 0));
+            }
+        }).start();
+
+    }
 }

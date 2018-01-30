@@ -1,18 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#DDD"
+    android:orientation="vertical"
     tools:context="com.app.xz.autohelper.MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <android.support.v7.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:layout_margin="20dp"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="5dp">
 
-</android.support.constraint.ConstraintLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tip"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:background="#cc0000"
+                android:gravity="center_vertical"
+                android:paddingLeft="10dp"
+                android:text="当前服务未启动"
+                android:textColor="#ffffff"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:lineSpacingExtra="5dp"
+                android:padding="10dp"
+                android:text="1.快助手需要必要的权限才能使用:\n点击下面按钮->选择快辅工具->点击开启\n2.请尽可能的锁定进程 以保证服务长期运行" />
+        </LinearLayout>
+
+    </android.support.v7.widget.CardView>
+
+    <Button
+        android:id="@+id/openService"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:background="#03A9F4"
+        android:text="前往开启服务"
+        android:textColor="#fff" />
+
+    <LinearLayout
+        android:id="@+id/mode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <android.support.v7.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            app:cardCornerRadius="0dp"
+            app:cardElevation="5dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tip_mode"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:background="#cccccc"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="10dp"
+                    android:text="强力模式未启动"
+                    android:textColor="#ffffff"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:lineSpacingExtra="5dp"
+                    android:padding="10dp"
+                    android:text="普通模式下仅能快速打开新通知的红包，如果当前您正处于聊天界面，则红包无法抓取；强力模式修复了这一问题，取而代之的是大量的cpu占用，建议需要时再开启。" />
+
+                <TextView
+                    android:id="@+id/openMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:background="#03A9F4"
+                    android:gravity="center"
+                    android:text="开启强力模式"
+                    android:textColor="#fff" />
+            </LinearLayout>
+
+        </android.support.v7.widget.CardView>
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="bottom"
+        android:layout_margin="20dp"
+        android:gravity="left|bottom"
+        android:lineSpacingExtra="5dp"
+        android:text="说明：\n1.开启服务 自动抢后台通知的新红包\n2.强力模式 增加自动抢聊天界面新红包\n3.处于微信 [聊天列表页] ,抢红包不生效\n测试可用手机：华为\n测试不可用手机：小米（在红包界面擅自增加图层导致界面识别失效）\n微信新版本会变更id，进而导致软件不可用\n当前'开'id：com.tencent.mm:id/c2i\n当前关闭id：com.tencent.mm:id/ho"
+        android:textSize="10sp" />
+
+</LinearLayout>
